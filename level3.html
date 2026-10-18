@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>السنة الثالثة متوسط - أكاديمية الرياضيات</title>
+    <style>
+        /* --- الإعدادات الأساسية --- */
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, sans-serif; display: flex; flex-direction: column; height: 100vh; background: #f4f7f6; overflow: hidden;}
+        
+        /* لون مختلف قليلاً للهيدر لتمييز السنة الثالثة */
+        header { background: #16a085; color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 20; position: relative;}
+        
+        .header-right { display: flex; align-items: center; gap: 15px; }
+        
+        /* زر فتح القائمة المخفي افتراضياً (يظهر في الهواتف فقط) */
+        .menu-toggle { display: none; background: none; border: none; color: white; font-size: 24px; cursor: pointer; padding: 0;}
+        
+        header h2 { margin: 0; font-size: 1.5rem; }
+        header a { color: white; text-decoration: none; background: #e74c3c; padding: 8px 15px; border-radius: 5px; font-weight: bold; font-size: 0.9rem;}
+        
+        .main-container { display: flex; flex: 1; overflow: hidden; position: relative; }
+        
+        /* تصميم القائمة الجانبية (ثابتة في الكمبيوتر) */
+        .sidebar { width: 250px; background: #ffffff; border-left: 1px solid #ddd; padding: 20px; overflow-y: auto; transition: 0.3s ease; z-index: 15;}
+        .sidebar h3 { color: #2c3e50; border-bottom: 2px solid #16a085; padding-bottom: 10px; margin-top: 0;}
+        .lesson-btn { display: block; width: 100%; text-align: right; background: #f8f9f9; border: 1px solid #eee; padding: 12px; margin-bottom: 8px; cursor: pointer; border-radius: 5px; font-size: 15px; transition: 0.3s;}
+        .lesson-btn:hover, .lesson-btn.active { background: #16a085; color: white;}
+        
+        /* مساحة العرض المركزية */
+        .content { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; transition: 0.3s ease;}
+        #lesson-title { color: #34495e; margin-top: 0; font-size: 1.6rem;}
+        
+        .view-options { display: flex; gap: 10px; margin-bottom: 15px;}
+        .tab-btn { flex: 1; background: #bdc3c7; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; transition: 0.3s;}
+        .tab-btn.active { background: #2ecc71; }
+        
+        /* إعدادات ملف الـ PDF */
+        iframe { width: 100%; flex: 1; min-height: 70vh; border: none; border-radius: 8px; background: #e0e0e0; box-shadow: 0 4px 6px rgba(0,0,0,0.1);}
+        #loading { text-align: center; color: #7f8c8d; font-size: 1.2em; margin-top: 50px;}
+
+        /* خلفية شفافة تظهر عند فتح القائمة في الهاتف */
+        .overlay { display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10; cursor: pointer;}
+
+        /* --- إعدادات التوافق مع شاشات الهواتف المحمولة --- */
+        @media (max-width: 768px) {
+            .menu-toggle { display: block; } /* إظهار زر الخطوط الثلاثة */
+            
+            /* تحويل القائمة الجانبية إلى قائمة منزلقة من اليمين */
+            .sidebar { 
+                position: absolute; 
+                top: 0; 
+                bottom: 0; 
+                right: -290px; /* إخفاؤها خارج الشاشة */
+                width: 250px; 
+                box-shadow: -2px 0 10px rgba(0,0,0,0.2); 
+            }
+            
+            /* عند فتح القائمة (بواسطة JavaScript) */
+            .sidebar.active { right: 0; }
+            
+            .content { padding: 15px 10px; }
+            #lesson-title { font-size: 1.3rem; }
+            .view-options { flex-direction: column; }
+            .tab-btn { width: 100%; padding: 12px; }
+            iframe { min-height: 75vh; }
+            header h2 { font-size: 1.2rem; }
+            header a { padding: 6px 10px; font-size: 0.8rem;}
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-right">
+            <!-- زر فتح القائمة (يظهر فقط في الهواتف) -->
+            <button class="menu-toggle" onclick="toggleMenu()">☰</button>
+            <h2 id="page-title">📗 الثالثة متوسط</h2>
+        </div>
+        <a href="index.html">🏠 الرئيسية</a>
+    </header>
+
+    <div class="main-container">
+        <!-- طبقة التظليل التي تغلق القائمة عند الضغط عليها في الهاتف -->
+        <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+
+        <!-- القائمة الجانبية -->
+        <aside class="sidebar" id="lesson-list">
+            <h3>فهرس الدروس</h3>
+        </aside>
+
+        <!-- مساحة العمل -->
+        <main class="content">
+            <h1 id="lesson-title">يرجى اختيار درس من القائمة</h1>
+            <div id="loading">جاري جلب الدروس... ⏳</div>
+
+            <div id="lesson-workspace" style="display:none; flex:1; flex-direction: column;">
+                <div class="view-options">
+                    <button id="btn-lesson" class="tab-btn active" onclick="showTab('lesson')">📚 عرض الدرس</button>
+                    <button id="btn-exercise" class="tab-btn" onclick="showTab('exercise')">📝 عرض التمارين</button>
+                </div>
+                <iframe id="pdf-lesson" src=""></iframe>
+                <iframe id="pdf-exercise" src="" style="display:none;"></iframe>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // رابط API الخاص بك
+        const API_URL = "https://script.google.com/macros/s/AKfycbzOazk69VXagao9KiqMzRTZ9vhm8uv7uXBae0ZGCN7_tMMD4KARM8MuvmiN15bzxSeCOA/exec";
+
+        fetch(API_URL)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('loading').style.display = 'none';
+                buildSidebar(data);
+            })
+            .catch(error => {
+                document.getElementById('loading').innerText = "❌ حدث خطأ أثناء تحميل البيانات.";
+            });
+
+        function buildSidebar(lessons) {
+            const sidebar = document.getElementById('lesson-list');
+            
+            // هنا يكمن السر: فلترة الدروس لجلب دروس السنة الثالثة فقط (level3)
+            const level3Lessons = lessons.filter(lesson => lesson.level === "level3");
+
+            if (level3Lessons.length === 0) {
+                sidebar.innerHTML += "<p style='color:#7f8c8d; font-size:14px; text-align:center;'>لا توجد دروس مضافة حالياً.</p>";
+                return;
+            }
+
+            level3Lessons.forEach(lesson => {
+                let btn = document.createElement("button");
+                btn.className = "lesson-btn";
+                btn.innerText = lesson.title;
+                btn.onclick = (e) => {
+                    document.querySelectorAll('.lesson-btn').forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    displayLesson(lesson);
+                    
+                    // إغلاق القائمة أوتوماتيكياً في الهواتف بعد اختيار الدرس
+                    if(window.innerWidth <= 768) {
+                        toggleMenu();
+                    }
+                };
+                sidebar.appendChild(btn);
+            });
+        }
+
+        function displayLesson(lesson) {
+            document.getElementById('lesson-title').innerText = lesson.title;
+            document.getElementById('lesson-workspace').style.display = "flex";
+
+            const pdfLesson = document.getElementById('pdf-lesson');
+            const pdfExercise = document.getElementById('pdf-exercise');
+
+            pdfLesson.src = lesson.pdf_lesson_id ? `https://drive.google.com/file/d/${lesson.pdf_lesson_id}/preview` : "";
+            pdfExercise.src = lesson.pdf_exercise_id ? `https://drive.google.com/file/d/${lesson.pdf_exercise_id}/preview` : "";
+
+            showTab('lesson');
+        }
+
+        function showTab(tabName) {
+            const pdfLesson = document.getElementById('pdf-lesson');
+            const pdfExercise = document.getElementById('pdf-exercise');
+            const btnLesson = document.getElementById('btn-lesson');
+            const btnExercise = document.getElementById('btn-exercise');
+
+            if (tabName === 'lesson') {
+                pdfLesson.style.display = "block";
+                pdfExercise.style.display = "none";
+                btnLesson.classList.add("active");
+                btnExercise.classList.remove("active");
+            } else {
+                pdfLesson.style.display = "none";
+                pdfExercise.style.display = "block";
+                btnLesson.classList.remove("active");
+                btnExercise.classList.add("active");
+            }
+        }
+
+        // دالة فتح وإغلاق القائمة الجانبية (للهواتف)
+        function toggleMenu() {
+            const sidebar = document.getElementById('lesson-list');
+            const overlay = document.getElementById('overlay');
+            
+            sidebar.classList.toggle('active');
+            
+            if (sidebar.classList.contains('active')) {
+                overlay.style.display = 'block';
+            } else {
+                overlay.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>
